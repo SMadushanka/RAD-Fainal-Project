@@ -68,7 +68,7 @@ export default function SellerProfile() {
     )
   }
 
-  return (
+  return ( 
     <div className="bg-white min-h-screen">
       {/* Navigation */}
       <nav className="bg-black text-white sticky top-0 z-50">
