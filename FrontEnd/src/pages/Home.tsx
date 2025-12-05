@@ -67,155 +67,7 @@ export default function Home() {
     images: ['', '']
   })
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: '1',
-      type: 'car',
-      name: 'M440i xDrive',
-      brand: 'BMW',
-      year: 2024,
-      price: 7500000,
-      condition: 'New',
-      images: ['https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600', 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600'],
-      description: 'The new BMW M440i xDrive. Premium performance meets luxury. Exceptional engineering. Experience power.',
-      mileage: '5 km',
-      postedBy: 'BMW Dealer',
-      postedByImage: 'https://i.pravatar.cc/150?img=1',
-      postedDate: '2 days ago',
-      sellerRating: 4.8,
-      sellerReviews: 156,
-      comments: [],
-      engineSize: '3.0L Inline-6',
-      fuelType: 'Hybrid',
-      transmission: 'Automatic'
-    },
-    {
-      id: '2',
-      type: 'car',
-      name: '911 Turbo S',
-      brand: 'Porsche',
-      year: 2023,
-      price: 25000000,
-      condition: 'Excellent',
-      images: ['https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=600', 'https://images.unsplash.com/photo-1514314723033-ce0042f1d43a?w=600'],
-      description: 'Incredible power, incredible design. The new Porsche 911 Turbo S.',
-      mileage: '12,500 km',
-      postedBy: 'Luxury Motors',
-      postedByImage: 'https://i.pravatar.cc/150?img=2',
-      postedDate: '5 days ago',
-      sellerRating: 4.9,
-      sellerReviews: 89,
-      comments: [],
-      engineSize: '3.8L Flat-6',
-      fuelType: 'Petrol',
-      transmission: 'Automatic'
-    },
-    {
-      id: '3',
-      type: 'bike',
-      name: 'S1000RR',
-      brand: 'BMW',
-      year: 2024,
-      price: 2000000,
-      condition: 'New',
-      images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600', 'https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=600'],
-      description: 'Ultimate performance on two wheels. Race-proven technology.',
-      mileage: '50 km',
-      postedBy: 'Speed Bikes',
-      postedByImage: 'https://i.pravatar.cc/150?img=3',
-      postedDate: '1 day ago',
-      sellerRating: 4.7,
-      sellerReviews: 234,
-      comments: [],
-      engineSize: '999cc',
-      fuelType: 'Petrol',
-      transmission: 'Manual'
-    },
-    {
-      id: '4',
-      type: 'suv',
-      name: 'Range Rover Sport',
-      brand: 'Land Rover',
-      year: 2022,
-      price: 12000000,
-      condition: 'Good',
-      images: ['https://images.unsplash.com/photo-1533473359331-35acda7d5c38?w=600', 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600'],
-      description: 'Luxury SUV with exceptional off-road capability. Dynamic driving experience.',
-      mileage: '45,000 km',
-      postedBy: 'Auto Exchange',
-      postedByImage: 'https://i.pravatar.cc/150?img=4',
-      postedDate: '3 days ago',
-      sellerRating: 4.6,
-      sellerReviews: 112,
-      comments: [],
-      engineSize: '3.0L V6',
-      fuelType: 'Diesel',
-      transmission: 'Automatic'
-    },
-    {
-      id: '5',
-      type: 'van',
-      name: 'Mercedes-Benz Sprinter',
-      brand: 'Mercedes-Benz',
-      year: 2023,
-      price: 4500000,
-      condition: 'Like New',
-      images: ['https://images.unsplash.com/photo-1605559424843-9e4c3febda46?w=600', 'https://images.unsplash.com/photo-1527789050715-11592f08a618?w=600'],
-      description: 'Commercial van with premium interior. Reliable and spacious.',
-      mileage: '8,500 km',
-      postedBy: 'Commercial Traders',
-      postedByImage: 'https://i.pravatar.cc/150?img=5',
-      postedDate: '4 days ago',
-      sellerRating: 4.8,
-      sellerReviews: 78,
-      comments: [],
-      engineSize: '2.1L Diesel',
-      fuelType: 'Diesel',
-      transmission: 'Automatic'
-    },
-    {
-      id: '6',
-      type: 'sedan',
-      name: 'Toyota Camry',
-      brand: 'Toyota',
-      year: 2021,
-      price: 3800000,
-      condition: 'Fair',
-      images: ['https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600'],
-      description: 'Reliable family sedan. Good fuel economy and comfort.',
-      mileage: '78,000 km',
-      postedBy: 'Used Car Hub',
-      postedByImage: 'https://i.pravatar.cc/150?img=6',
-      postedDate: '1 week ago',
-      sellerRating: 4.5,
-      sellerReviews: 156,
-      comments: [],
-      engineSize: '2.5L 4-Cylinder',
-      fuelType: 'Petrol',
-      transmission: 'Automatic'
-    },
-    {
-      id: '7',
-      type: 'truck',
-      name: 'Ford F-150',
-      brand: 'Ford',
-      year: 2023,
-      price: 6500000,
-      condition: 'Excellent',
-      images: ['https://images.unsplash.com/photo-1579202673506-ca3fb7dd798d?w=600', 'https://images.unsplash.com/photo-1609708536965-59d679b58d1d?w=600'],
-      description: 'Powerful pickup truck. Perfect for work and weekend adventures.',
-      mileage: '22,000 km',
-      postedBy: 'Heavy Duty Motors',
-      postedByImage: 'https://i.pravatar.cc/150?img=7',
-      postedDate: '2 days ago',
-      sellerRating: 4.7,
-      sellerReviews: 92,
-      comments: [],
-      engineSize: '5.0L V8',
-      fuelType: 'Petrol',
-      transmission: 'Automatic'
-    }
-  ])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
 
   const handleImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -398,18 +250,8 @@ export default function Home() {
 
       {/* Post Vehicle Modal */}
       {showPostForm && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl p-8 my-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold tracking-tight">POST YOUR VEHICLE</h2>
-              <button
-                onClick={() => setShowPostForm(false)}
-                className="text-3xl font-light text-gray-500 hover:text-black"
-              >
-                ✕
-              </button>
-            </div>
-
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handlePostVehicle} className="space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -597,6 +439,17 @@ export default function Home() {
                   className="flex-1 border border-black text-black py-3 font-bold tracking-wide hover:bg-black hover:text-white transition"
                 >
                   CANCEL
+                </button>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-center pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPostForm(false)}
+                  className="text-sm text-gray-500 hover:text-black transition"
+                >
+                  ✕ Close
                 </button>
               </div>
             </form>
