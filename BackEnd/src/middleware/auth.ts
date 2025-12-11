@@ -3,6 +3,7 @@ import { verifyToken } from '../config/jwt';
 
 export interface AuthenticatedRequest extends Request {
   userId?: string;
+  file?: any; // Multer file type
 }
 
 export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
