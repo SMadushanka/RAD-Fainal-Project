@@ -6,6 +6,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   fullName: string;
+  phone?: string;
   bio?: string;
   profileImage?: string;
   isVerified: boolean;
@@ -39,6 +40,11 @@ const userSchema = new Schema<IUser>(
     fullName: {
       type: String,
       required: [true, 'Full name is required'],
+      trim: true,
+    },
+    phone: {
+      type: String,
+      default: null,
       trim: true,
     },
     bio: {

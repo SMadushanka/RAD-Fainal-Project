@@ -13,6 +13,7 @@ export interface Post {
         _id: string;
         username: string;
         fullName: string;
+        phone?: string;
         profileImage: string;
     };
     likes: string[];

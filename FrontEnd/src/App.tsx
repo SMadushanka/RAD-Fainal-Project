@@ -9,12 +9,15 @@ import SellerProfile from './pages/SellerProfile'
 import Sellers from './pages/Sellers'
 import Vehicles from './pages/Vehicles'
 
+import VehicleDetails from './pages/VehicleDetails'
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/vehicles" element={<Vehicles />} />
+        <Route path="/vehicles/:id" element={<VehicleDetails />} />
         <Route path="/create-post" element={<CreatePost />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
