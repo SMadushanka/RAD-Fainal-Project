@@ -41,12 +41,18 @@ export const postService = {
         return response.post as Post;
     },
 
+    getUserPosts: async (userId: string) => {
+        const response = await api.get(`/post/user/${userId}`);
+        return response.posts as Post[];
+    },
+
     createPost: async (data: FormData) => {
-        const response = await api.post('/post', data, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
+        const response = await api.post('/post', data);
         return response.post as Post;
+    },
+
+    deletePost: async (postId: string) => {
+        const response = await api.delete(`/post/${postId}`);
+        return response;
     },
 };

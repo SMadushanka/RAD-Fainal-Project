@@ -1,105 +1,86 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-interface Vehicle {
-  id: string
-  type: 'car' | 'bike'
-  name: string
-  brand: string
-  year: number
-  price: number
-  condition: string
-  images: string[]
-  description: string
-  mileage: string
-  postedBy: string
-  postedByImage: string
-  postedDate: string
-  sellerRating: number
-  sellerReviews: number
-  comments: any[]
-  engineSize: string
-  fuelType: string
-  transmission: string
-}
+import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import { postService, type Post } from '../services/postService'
 
 export default function MyPosts() {
   const navigate = useNavigate()
-  const [currentUser] = useState<string | null>(localStorage.getItem('currentUser'))
-  const [myVehicles, setMyVehicles] = useState<Vehicle[]>([])
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
-  const [filter, setFilter] = useState<'all' | 'car' | 'bike'>('all')
+  const [myPosts, setMyPosts] = useState<Post[]>([])
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [filter, setFilter] = useState<'all' | 'Car' | 'Bike'>('all')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Get userId from localStorage or decode from token
+  const getUserId = (): string | null => {
+    const storedUserId = localStorage.getItem('userId')
+    if (storedUserId) return storedUserId
+
+    // Try to decode from JWT token
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        return payload.userId || payload.id || payload.sub
+      } catch (e) {
+        console.error('Failed to decode token:', e)
+      }
+    }
+    return null
+  }
 
   useEffect(() => {
-    if (!currentUser) {
+    const token = localStorage.getItem('token')
+    if (!token) {
       navigate('/login')
       return
     }
 
-    // Load vehicles from localStorage
-    const allVehicles: Vehicle[] = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key?.startsWith('vehicles_')) {
-        const vehicle = JSON.parse(localStorage.getItem(key) || '{}')
-        if (vehicle.postedBy === currentUser) {
-          allVehicles.push(vehicle)
-        }
+    const userId = getUserId()
+    if (!userId) {
+      console.error('No userId found. Please log in again.')
+      navigate('/login')
+      return
+    }
+
+    // Fetch user's posts from API
+    const fetchMyPosts = async () => {
+      try {
+        setLoading(true)
+        const posts = await postService.getUserPosts(userId)
+        setMyPosts(posts)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load your posts')
+        console.error('Error fetching user posts:', err)
+      } finally {
+        setLoading(false)
       }
     }
-    
-    // Also check sessionStorage or state for temporary vehicles
-    setMyVehicles(allVehicles)
-  }, [currentUser, navigate])
 
-  const handleDelete = (vehicleId: string) => {
-    if (confirm('Are you sure you want to delete this vehicle posting?')) {
-      setMyVehicles(myVehicles.filter(v => v.id !== vehicleId))
-      setSelectedVehicle(null)
+    fetchMyPosts()
+  }, [navigate])
+
+  const handleDelete = async (postId: string) => {
+    if (confirm('Are you sure you want to delete this post?')) {
+      try {
+        await postService.deletePost(postId)
+        setMyPosts(myPosts.filter(p => p._id !== postId))
+        setSelectedPost(null)
+        alert('Post deleted successfully!')
+      } catch (err: any) {
+        alert(err.message || 'Failed to delete post')
+      }
     }
   }
 
-  const filteredVehicles = filter === 'all'
-    ? myVehicles
-    : myVehicles.filter(v => v.type === filter)
-
-  if (!currentUser) {
-    return null
-  }
+  const filteredPosts = filter === 'all'
+    ? myPosts
+    : myPosts.filter(p => p.category === filter)
 
   return (
-    <div className="bg-white min-h-screen">
-      {/* Navigation */}
-      <nav className="bg-black text-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="text-2xl font-bold tracking-widest hover:text-gray-300 transition">
-            SPORTS ELITE
-          </button>
-          <div className="flex items-center gap-8">
-            <button
-              onClick={() => navigate('/')}
-              className="text-sm font-light tracking-wide hover:text-gray-300 transition"
-            >
-              BROWSE
-            </button>
-            <button
-              onClick={() => navigate(`/profile/${currentUser}`)}
-              className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold"
-            >
-              {currentUser.charAt(0).toUpperCase()}
-            </button>
-            <button
-              onClick={() => {
-                localStorage.removeItem('currentUser')
-                navigate('/login')
-              }}
-              className="text-sm font-light tracking-wide hover:text-gray-300 transition"
-            >
-              LOGOUT
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="bg-white min-h-screen flex flex-col">
+      <Navbar />
 
       {/* Header */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-12">
@@ -110,215 +91,228 @@ export default function MyPosts() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Filters */}
-        <div className="mb-8">
-          <div className="flex gap-4">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-6 py-2 font-bold tracking-wide transition ${
-                filter === 'all'
-                  ? 'bg-black text-white'
-                  : 'border border-black text-black hover:bg-black hover:text-white'
-              }`}
-            >
-              ALL ({myVehicles.length})
-            </button>
-            <button
-              onClick={() => setFilter('car')}
-              className={`px-6 py-2 font-bold tracking-wide transition ${
-                filter === 'car'
-                  ? 'bg-black text-white'
-                  : 'border border-black text-black hover:bg-black hover:text-white'
-              }`}
-            >
-              CARS ({myVehicles.filter(v => v.type === 'car').length})
-            </button>
-            <button
-              onClick={() => setFilter('bike')}
-              className={`px-6 py-2 font-bold tracking-wide transition ${
-                filter === 'bike'
-                  ? 'bg-black text-white'
-                  : 'border border-black text-black hover:bg-black hover:text-white'
-              }`}
-            >
-              MOTORCYCLES ({myVehicles.filter(v => v.type === 'bike').length})
-            </button>
+      <div className="max-w-7xl mx-auto px-4 py-12 flex-1">
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="text-2xl text-gray-600">Loading your posts...</div>
           </div>
-        </div>
-
-        {/* Vehicles List */}
-        {filteredVehicles.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-5xl mb-4">🚗</div>
-            <h3 className="text-2xl font-bold tracking-tight mb-2">No Listings Yet</h3>
-            <p className="text-gray-600 font-light mb-6">
-              {filter === 'all' 
-                ? 'You haven\'t posted any vehicles yet' 
-                : `You haven't posted any ${filter === 'car' ? 'cars' : 'motorcycles'}`}
-            </p>
+        ) : error ? (
+          <div className="text-center py-20">
+            <div className="text-red-600 text-xl mb-4">{error}</div>
             <button
-              onClick={() => navigate('/')}
-              className="px-8 py-3 bg-black text-white font-bold tracking-wide hover:bg-gray-800 transition"
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-black text-white font-bold tracking-wide hover:bg-gray-800 transition"
             >
-              POST YOUR FIRST VEHICLE
+              RETRY
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredVehicles.map(vehicle => (
-              <div
-                key={vehicle.id}
-                className="border border-gray-200 overflow-hidden hover:shadow-lg transition"
-              >
-                {/* Image */}
-                <div className="relative h-64 bg-gray-100 overflow-hidden">
-                  <img
-                    src={vehicle.images[0]}
-                    alt={vehicle.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-black text-white px-3 py-1 text-xs font-bold tracking-widest">
-                      {vehicle.condition}
-                    </span>
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-white text-black px-3 py-1 text-xs font-bold tracking-widest">
-                      {vehicle.comments.length} Reviews
-                    </div>
-                  </div>
-                </div>
-
-                {/* Details */}
-                <div className="p-6">
-                  <h3 className="text-lg font-bold tracking-tight mb-2">
-                    {vehicle.year} {vehicle.brand} {vehicle.name}
-                  </h3>
-
-                  <p className="text-2xl font-bold text-gray-900 mb-4">
-                    PKR {(vehicle.price / 1000000).toFixed(1)}M
-                  </p>
-
-                  <div className="space-y-2 text-sm text-gray-600 font-light mb-6">
-                    <div className="flex justify-between">
-                      <span>Mileage:</span>
-                      <span className="font-bold text-black">{vehicle.mileage}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Engine:</span>
-                      <span className="font-bold text-black">{vehicle.engineSize}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Posted:</span>
-                      <span className="font-bold text-black">{vehicle.postedDate}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedVehicle(vehicle)}
-                      className="flex-1 px-4 py-2 border border-black text-black text-sm font-bold tracking-wide hover:bg-black hover:text-white transition"
-                    >
-                      VIEW DETAILS
-                    </button>
-                    <button
-                      onClick={() => handleDelete(vehicle.id)}
-                      className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-bold tracking-wide hover:bg-red-700 transition"
-                    >
-                      DELETE
-                    </button>
-                  </div>
-                </div>
+          <>
+            {/* Filters */}
+            <div className="mb-8">
+              <div className="flex gap-4 flex-wrap">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-6 py-2 font-bold tracking-wide transition ${
+                    filter === 'all'
+                      ? 'bg-black text-white'
+                      : 'border border-black text-black hover:bg-black hover:text-white'
+                  }`}
+                >
+                  ALL ({myPosts.length})
+                </button>
+                <button
+                  onClick={() => setFilter('Car')}
+                  className={`px-6 py-2 font-bold tracking-wide transition ${
+                    filter === 'Car'
+                      ? 'bg-black text-white'
+                      : 'border border-black text-black hover:bg-black hover:text-white'
+                  }`}
+                >
+                  CARS ({myPosts.filter(p => p.category === 'Car').length})
+                </button>
+                <button
+                  onClick={() => setFilter('Bike')}
+                  className={`px-6 py-2 font-bold tracking-wide transition ${
+                    filter === 'Bike'
+                      ? 'bg-black text-white'
+                      : 'border border-black text-black hover:bg-black hover:text-white'
+                  }`}
+                >
+                  BIKES ({myPosts.filter(p => p.category === 'Bike').length})
+                </button>
               </div>
-            ))}
-          </div>
+            </div>
+
+            {/* Posts List */}
+            {filteredPosts.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-5xl mb-4">🚗</div>
+                <h3 className="text-2xl font-bold tracking-tight mb-2">No Listings Yet</h3>
+                <p className="text-gray-600 font-light mb-6">
+                  {filter === 'all'
+                    ? 'You haven\'t posted any vehicles yet'
+                    : `You haven't posted any ${filter.toLowerCase()}s`}
+                </p>
+                <button
+                  onClick={() => navigate('/create-post')}
+                  className="px-8 py-3 bg-black text-white font-bold tracking-wide hover:bg-gray-800 transition"
+                >
+                  POST YOUR FIRST VEHICLE
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredPosts.map(post => (
+                  <div
+                    key={post._id}
+                    className="border border-gray-200 overflow-hidden hover:shadow-lg transition"
+                  >
+                    {/* Image */}
+                    <div className="relative h-64 bg-gray-100 overflow-hidden">
+                      <img
+                        src={post.image || 'https://images.unsplash.com/photo-1494905998402-395d579af905?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <span className="bg-black text-white px-3 py-1 text-xs font-bold tracking-widest">
+                          {post.condition}
+                        </span>
+                      </div>
+                      <div className="absolute top-4 right-4">
+                        <div className="bg-white text-black px-3 py-1 text-xs font-bold tracking-widest">
+                          {post.comments?.length || 0} Comments
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Details */}
+                    <div className="p-6">
+                      <h3 className="text-lg font-bold tracking-tight mb-2">
+                        {post.title}
+                      </h3>
+
+                      <p className="text-2xl font-bold text-gray-900 mb-4">
+                        ${post.price.toLocaleString()}
+                      </p>
+
+                      <div className="space-y-2 text-sm text-gray-600 font-light mb-6">
+                        <div className="flex justify-between">
+                          <span>Location:</span>
+                          <span className="font-bold text-black">{post.location}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Category:</span>
+                          <span className="font-bold text-black">{post.category}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Posted:</span>
+                          <span className="font-bold text-black">{new Date(post.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedPost(post)}
+                          className="flex-1 px-4 py-2 border border-black text-black text-sm font-bold tracking-wide hover:bg-black hover:text-white transition"
+                        >
+                          VIEW DETAILS
+                        </button>
+                        <button
+                          onClick={() => handleDelete(post._id)}
+                          className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-bold tracking-wide hover:bg-red-700 transition"
+                        >
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Vehicle Detail Modal */}
-      {selectedVehicle && (
+      {/* Post Detail Modal */}
+      {selectedPost && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-3xl my-8">
             <button
-              onClick={() => setSelectedVehicle(null)}
+              onClick={() => setSelectedPost(null)}
               className="sticky top-0 right-0 z-10 float-right text-3xl font-light p-4 hover:bg-gray-100"
             >
               ✕
             </button>
 
             <div className="p-8 clear-both">
-              {/* Image Gallery */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                {selectedVehicle.images.map((image, index) => (
-                  <img
-                    key={index}
-                    src={image}
-                    alt={`${selectedVehicle.name} ${index + 1}`}
-                    className="w-full h-64 object-cover"
-                  />
-                ))}
+              {/* Image */}
+              <div className="mb-8">
+                <img
+                  src={selectedPost.image || 'https://images.unsplash.com/photo-1494905998402-395d579af905?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                  alt={selectedPost.title}
+                  className="w-full h-96 object-cover rounded-lg"
+                />
               </div>
 
               {/* Title and Price */}
               <div className="mb-8 pb-8 border-b border-gray-200">
                 <h2 className="text-4xl font-bold tracking-tight mb-2">
-                  {selectedVehicle.year} {selectedVehicle.brand} {selectedVehicle.name}
+                  {selectedPost.title}
                 </h2>
                 <p className="text-3xl font-bold text-gray-900 mb-2">
-                  PKR {selectedVehicle.price.toLocaleString()}
+                  ${selectedPost.price.toLocaleString()}
                 </p>
                 <div className="inline-block px-4 py-1 bg-black text-white text-sm font-bold tracking-wide">
-                  {selectedVehicle.condition}
+                  {selectedPost.condition}
                 </div>
               </div>
 
               {/* Specifications */}
-              <div className="grid grid-cols-4 gap-4 mb-8 pb-8 border-b border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 pb-8 border-b border-gray-200">
                 <div>
-                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">MILEAGE</div>
-                  <div className="text-lg font-bold">{selectedVehicle.mileage}</div>
+                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">CATEGORY</div>
+                  <div className="text-lg font-bold">{selectedPost.category}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">ENGINE</div>
-                  <div className="text-lg font-bold">{selectedVehicle.engineSize}</div>
+                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">LOCATION</div>
+                  <div className="text-lg font-bold">{selectedPost.location}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">FUEL</div>
-                  <div className="text-lg font-bold">{selectedVehicle.fuelType}</div>
+                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">LIKES</div>
+                  <div className="text-lg font-bold">{selectedPost.likes?.length || 0}</div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">TRANSMISSION</div>
-                  <div className="text-lg font-bold">{selectedVehicle.transmission}</div>
+                  <div className="text-xs font-bold tracking-widest text-gray-600 mb-1">POSTED</div>
+                  <div className="text-lg font-bold">{new Date(selectedPost.createdAt).toLocaleDateString()}</div>
                 </div>
               </div>
 
               {/* Description */}
               <div className="mb-8 pb-8 border-b border-gray-200">
                 <h3 className="text-lg font-bold tracking-tight mb-3">DESCRIPTION</h3>
-                <p className="text-gray-700 font-light leading-relaxed">{selectedVehicle.description}</p>
+                <p className="text-gray-700 font-light leading-relaxed">{selectedPost.description}</p>
               </div>
 
-              {/* Reviews Summary */}
+              {/* Comments Summary */}
               <div className="pb-8 border-b border-gray-200">
-                <h3 className="text-lg font-bold tracking-tight mb-4">REVIEWS ({selectedVehicle.comments.length})</h3>
-                {selectedVehicle.comments.length === 0 ? (
-                  <p className="text-gray-600 font-light">No reviews yet</p>
+                <h3 className="text-lg font-bold tracking-tight mb-4">COMMENTS ({selectedPost.comments?.length || 0})</h3>
+                {!selectedPost.comments || selectedPost.comments.length === 0 ? (
+                  <p className="text-gray-600 font-light">No comments yet</p>
                 ) : (
                   <div className="space-y-4">
-                    {selectedVehicle.comments.map((comment, index) => (
+                    {selectedPost.comments.map((comment, index) => (
                       <div key={index} className="flex gap-4">
                         <img
-                          src={comment.authorImage}
-                          alt={comment.author}
+                          src={comment.user.profileImage || `https://ui-avatars.com/api/?name=${comment.user.fullName}`}
+                          alt={comment.user.fullName}
                           className="w-10 h-10 rounded-full object-cover"
                         />
                         <div className="flex-1">
-                          <p className="font-bold text-sm">{comment.author}</p>
-                          <div className="text-xs text-yellow-500 mb-1">
-                            {'⭐'.repeat(comment.rating)}
-                          </div>
+                          <p className="font-bold text-sm">{comment.user.fullName}</p>
                           <p className="text-sm text-gray-600 font-light">{comment.text}</p>
+                          <p className="text-xs text-gray-400 mt-1">{new Date(comment.createdAt).toLocaleString()}</p>
                         </div>
                       </div>
                     ))}
@@ -329,13 +323,13 @@ export default function MyPosts() {
               {/* Action Buttons */}
               <div className="flex gap-4 pt-8">
                 <button
-                  onClick={() => handleDelete(selectedVehicle.id)}
+                  onClick={() => handleDelete(selectedPost._id)}
                   className="flex-1 bg-red-600 text-white py-3 font-bold tracking-wide hover:bg-red-700 transition"
                 >
                   DELETE POSTING
                 </button>
                 <button
-                  onClick={() => setSelectedVehicle(null)}
+                  onClick={() => setSelectedPost(null)}
                   className="flex-1 border border-black text-black py-3 font-bold tracking-wide hover:bg-black hover:text-white transition"
                 >
                   CLOSE
@@ -345,6 +339,9 @@ export default function MyPosts() {
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   )
 }
+

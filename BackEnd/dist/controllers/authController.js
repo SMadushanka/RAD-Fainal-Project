@@ -8,7 +8,11 @@ const jwt_1 = require("../config/jwt");
 const errorHandler_1 = require("../middleware/errorHandler");
 const User_1 = __importDefault(require("../models/User"));
 exports.register = (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { username, email, password, fullName } = req.body;
+    let { username, email, password, fullName } = req.body;
+    // Normalize inputs
+    username = (username || '').toString().trim();
+    email = (email || '').toString().trim().toLowerCase();
+    fullName = (fullName || '').toString().trim();
     // Validation
     if (!username || !email || !password || !fullName) {
         return res.status(400).json({
@@ -16,7 +20,13 @@ exports.register = (0, errorHandler_1.asyncHandler)(async (req, res) => {
             message: 'All fields are required',
         });
     }
-    // Check if user already exists
+    if (typeof password !== 'string' || password.length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password must be at least 6 characters long',
+        });
+    }
+    // Check if user already exists (use normalized email and username)
     const existingUser = await User_1.default.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
         return res.status(409).json({
@@ -82,6 +92,7 @@ exports.login = (0, errorHandler_1.asyncHandler)(async (req, res) => {
             username: user.username,
             email: user.email,
             fullName: user.fullName,
+            phone: user.phone,
             bio: user.bio,
             profileImage: user.profileImage,
         },

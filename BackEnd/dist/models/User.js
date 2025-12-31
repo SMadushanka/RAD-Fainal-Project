@@ -64,6 +64,11 @@ const userSchema = new mongoose_1.Schema({
         required: [true, 'Full name is required'],
         trim: true,
     },
+    phone: {
+        type: String,
+        default: null,
+        trim: true,
+    },
     bio: {
         type: String,
         default: '',

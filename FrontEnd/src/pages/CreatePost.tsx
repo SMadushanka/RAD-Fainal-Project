@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
-import { postService } from '../services/postService';
+// import { postService } from '../services/postService';
+import { api } from '../services/api';
 
 export default function CreatePost() {
     const navigate = useNavigate();
@@ -37,6 +38,13 @@ export default function CreatePost() {
         setError('');
 
         try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // redirect to login if not authenticated
+                navigate('/login');
+                return;
+            }
+
             const data = new FormData();
             data.append('title', formData.title);
             data.append('description', formData.description);
@@ -48,10 +56,11 @@ export default function CreatePost() {
                 data.append('image', imageFile);
             }
 
-            await postService.createPost(data);
+            // Use api.post directly so headers are handled properly
+            await api.post('/post', data);
             navigate('/vehicles');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to create post');
+            setError(err.message || 'Failed to create post');
         } finally {
             setLoading(false);
         }

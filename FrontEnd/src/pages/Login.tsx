@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../services/api'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -16,20 +17,19 @@ export default function Login() {
       return
     }
 
-    const user = localStorage.getItem(`user_${email}`)
-    if (!user) {
-      setError('Invalid email or password')
-      return
-    }
-
-    const userData = JSON.parse(user)
-    if (userData.password !== password) {
-      setError('Invalid email or password')
-      return
-    }
-
-    localStorage.setItem('currentUser', email)
-    navigate('/')
+    // Call backend login to receive a JWT token
+    api.post('/auth/login', { email, password })
+      .then((res) => {
+        // res should contain token and user
+        localStorage.setItem('token', res.token)
+        // store user info for UI
+        localStorage.setItem('currentUser', res.user?.email || email)
+        localStorage.setItem('userId', res.user?.id || res.user?._id)
+        navigate('/')
+      })
+      .catch((err: Error) => {
+        setError(err.message || 'Invalid email or password')
+      })
   }
 
   return (

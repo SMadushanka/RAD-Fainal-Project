@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { api } from '../services/api'
 
 export default function Register() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     image: ''
@@ -44,25 +46,26 @@ export default function Register() {
       return
     }
 
-    const existingUser = localStorage.getItem(`user_${formData.email}`)
-    if (existingUser) {
-      setError('Email already registered')
-      return
-    }
+    // Create a username from email if not provided
+    const username = formData.email.split('@')[0]
 
-    const userData = {
-      fullName: formData.fullName,
+    // Call backend register endpoint
+    api.post('/auth/register', {
+      username,
       email: formData.email,
       password: formData.password,
-      image: formData.image || 'https://i.pravatar.cc/150?img=0',
-      joinedDate: new Date().toISOString(),
-      rating: 5,
-      reviews: 0
-    }
-
-    localStorage.setItem(`user_${formData.email}`, JSON.stringify(userData))
-    localStorage.setItem('currentUser', formData.email)
-    navigate('/')
+      fullName: formData.fullName,
+    })
+      .then((res) => {
+        // store token and current user
+        localStorage.setItem('token', res.token)
+        localStorage.setItem('currentUser', res.user?.email || formData.email)
+        localStorage.setItem('userId', res.user?.id || res.user?._id)
+        navigate('/')
+      })
+      .catch((err: Error) => {
+        setError(err.message || 'Registration failed')
+      })
   }
 
   return (
@@ -138,6 +141,20 @@ export default function Register() {
                 placeholder="name@example.com"
                 className="w-full px-4 py-3 bg-gray-900 border border-gray-800 text-white placeholder-gray-600 focus:outline-none focus:border-white transition font-light"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold tracking-widest text-white mb-2">
+                PHONE NUMBER (Optional)
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+1234567890"
+                className="w-full px-4 py-3 bg-gray-900 border border-gray-800 text-white placeholder-gray-600 focus:outline-none focus:border-white transition font-light"
+              />
+              <p className="text-xs text-gray-500 font-light mt-1">Include country code for WhatsApp (e.g., +1 for US)</p>
             </div>
 
             <div>

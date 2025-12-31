@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
+import VehicleCard from '../components/VehicleCard'
+import { postService } from '../services/postService'
+import type { Post } from '../services/postService'
 
 interface Message {
   id: string
@@ -11,22 +16,44 @@ interface Message {
 export default function SellerProfile() {
   const { sellerId } = useParams<{ sellerId: string }>()
   const navigate = useNavigate()
-  
-  const [currentUser] = useState<string | null>(localStorage.getItem('currentUser'))
-  const userData = sellerId ? JSON.parse(localStorage.getItem(`user_${sellerId}`) || '{}') : {}
-  
+
+  // currentUser not required in this view; remove unused state to keep types clean
+  const sellerStorage = sellerId ? localStorage.getItem(`user_${sellerId}`) : null
+  const parsedSeller = sellerStorage ? JSON.parse(sellerStorage) : null
+
+  const [sellerData, setSellerData] = useState<any>(parsedSeller || null)
+  const [sellerVehicles, setSellerVehicles] = useState<Post[]>([])
+
   const [messages, setMessages] = useState<Message[]>([])
   const [messageInput, setMessageInput] = useState<string>('')
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const [sellerVehicles] = useState([
-    // Sample vehicles - in real app, would be filtered by sellerId
-  ])
-
   useEffect(() => {
+    // scroll chat
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    // Try to load seller data from localStorage; if not present, derive from posts
+    const load = async () => {
+      try {
+        const posts = await postService.getAllPosts()
+        const filtered = posts.filter((p) => p.author && p.author._id === sellerId)
+        setSellerVehicles(filtered)
+
+        if (!sellerData && filtered.length > 0) {
+          setSellerData(filtered[0].author)
+        }
+      } catch (err) {
+        // fallback: no network – keep local data if available
+        console.warn('Could not load posts for seller:', err)
+      }
+    }
+
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sellerId])
 
   const handleSendMessage = () => {
     if (messageInput.trim()) {
@@ -36,7 +63,7 @@ export default function SellerProfile() {
         text: messageInput,
         timestamp: new Date()
       }
-      setMessages([...messages, newMessage])
+      setMessages((prev) => [...prev, newMessage])
       setMessageInput('')
 
       // Simulate seller response
@@ -44,11 +71,11 @@ export default function SellerProfile() {
         const sellerResponse: Message = {
           id: (Date.now() + 1).toString(),
           sender: 'seller',
-          text: 'Thanks for your inquiry! I will get back to you soon with more details.',
+          text: 'Thanks for your message. I will reply shortly.',
           timestamp: new Date()
         }
-        setMessages(prev => [...prev, sellerResponse])
-      }, 1000)
+        setMessages((prev) => [...prev, sellerResponse])
+      }, 900)
     }
   }
 
@@ -56,241 +83,199 @@ export default function SellerProfile() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Seller not found</p>
+          <p className="text-gray-600 mb-4">Seller not specified</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/sellers')}
             className="px-6 py-2 bg-black text-white font-bold tracking-wide hover:bg-gray-800 transition"
           >
-            BACK TO HOME
+            BACK TO SELLERS
           </button>
         </div>
       </div>
     )
   }
 
-  return ( 
-    <div className="bg-white min-h-screen">
-      {/* Navigation */}
-      <nav className="bg-black text-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => navigate('/')}
-            className="text-2xl font-bold tracking-widest hover:text-gray-300 transition"
-          >
-            SPORTS ELITE
-          </button>
-          <div className="flex items-center gap-8">
-            <button
-              onClick={() => navigate('/')}
-              className="text-sm font-light tracking-wide hover:text-gray-300 transition"
-            >
-              BROWSE
-            </button>
-            {currentUser && (
-              <>
+  // Derived display values with safe fallbacks
+  const displayName = sellerData?.fullName || sellerId
+  const profileImage = sellerData?.profileImage || `https://i.pravatar.cc/160?u=${sellerId}`
+  const rating = sellerData?.rating ?? 5
+  const reviews = sellerData?.reviews ?? sellerVehicles.length
+  const joinedYear = sellerData?.joinedDate ? new Date(sellerData.joinedDate).getFullYear() : '2024'
+
+  return (
+    <div className="bg-white min-h-screen flex flex-col">
+      <Navbar />
+
+      {/* Hero */}
+      <header className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-12">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
+          <div className="flex-shrink-0">
+            <img src={profileImage} alt={displayName} className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg" />
+          </div>
+
+          <div className="flex-1">
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{displayName}</h1>
+              {sellerData?.isVerified && (
+                <span className="text-sm bg-white/10 text-white px-3 py-1 rounded-full">Verified</span>
+              )}
+            </div>
+
+            <p className="text-sm text-gray-300 mt-2">Member since {joinedYear}</p>
+
+            <div className="flex items-center gap-6 mt-6">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">{Array.from({ length: 5 }).map((_, i) => (<span key={i}>{i < Math.floor(rating) ? '⭐' : '☆'}</span>))}</div>
+                <div className="text-sm">
+                  <div className="font-bold text-lg">{rating}.0</div>
+                  <div className="text-gray-300 text-xs">{reviews} reviews</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 flex-wrap">
                 <button
-                  onClick={() => navigate('/my-posts')}
-                  className="text-sm font-light tracking-wide hover:text-gray-300 transition"
+                  onClick={() => navigate('/create-post')}
+                  className="px-5 py-2 bg-yellow-500 text-black font-semibold rounded-lg shadow hover:bg-yellow-400 transition"
                 >
-                  MY POSTS
+                  Post Your Vehicle
                 </button>
+
                 <button
-                  onClick={() => {
-                    localStorage.removeItem('currentUser')
-                    window.location.reload()
-                  }}
-                  className="text-sm font-light tracking-wide hover:text-gray-300 transition"
+                  onClick={() => setIsChatOpen(true)}
+                  className="px-5 py-2 bg-white text-black font-semibold rounded-lg shadow hover:scale-[1.02] transition"
                 >
-                  LOGOUT
+                  Message Seller
                 </button>
-              </>
+
+                <button
+                  onClick={() => navigate('/vehicles')}
+                  className="px-5 py-2 border border-white text-white rounded-lg hover:bg-white hover:text-black transition"
+                >
+                  View Listings
+                </button>
+              </div>
+            </div>
+
+            {sellerData?.phone && (
+              <p className="mt-4 text-sm text-gray-300">Contact: <span className="text-white font-medium">{sellerData.phone}</span></p>
+            )}
+
+            {sellerData?.bio && (
+              <p className="mt-4 text-gray-200 max-w-3xl leading-relaxed">{sellerData.bio}</p>
             )}
           </div>
         </div>
-      </nav>
-
-      {/* Seller Info Hero */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-12">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex gap-8 items-start">
-            {/* Profile Image */}
-            <img
-              src={userData.image || `https://i.pravatar.cc/150?img=${Math.random()}`}
-              alt={sellerId}
-              className="w-32 h-32 rounded-lg object-cover"
-            />
-
-            {/* Seller Details */}
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold tracking-tight mb-4">{userData.fullName || sellerId}</h1>
-              
-              {/* Rating */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex gap-1 text-2xl">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i}>
-                      {i < Math.floor(userData.rating || 5) ? '⭐' : '☆'}
-                    </span>
-                  ))}
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{userData.rating || 5}.0</p>
-                  <p className="text-sm text-gray-300 font-light">({userData.reviews || 0} reviews)</p>
-                </div>
-              </div>
-
-              {/* Member Since */}
-              <div className="text-sm font-light text-gray-300">
-                <p>Member since {userData.joinedDate ? new Date(userData.joinedDate).getFullYear() : '2024'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </header>
 
       {/* Stats */}
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-4 gap-8 mb-12">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-black mb-2">{sellerVehicles.length}</p>
-            <p className="text-sm text-gray-600 font-light tracking-widest">ACTIVE LISTINGS</p>
+      <section className="max-w-6xl mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="p-6 bg-gray-50 rounded-xl shadow-sm text-center">
+            <div className="text-3xl font-bold">{sellerVehicles.length}</div>
+            <div className="text-xs text-gray-500 mt-1 tracking-widest">ACTIVE LISTINGS</div>
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-black mb-2">{userData.reviews || 0}</p>
-            <p className="text-sm text-gray-600 font-light tracking-widest">TOTAL REVIEWS</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-black mb-2">{userData.rating || 5}.0</p>
-            <p className="text-sm text-gray-600 font-light tracking-widest">RATING</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-black mb-2">100%</p>
-            <p className="text-sm text-gray-600 font-light tracking-widest">POSITIVE</p>
-          </div>
-        </div>
 
-        {/* About Section */}
-        <div className="py-12 border-t border-b border-gray-200">
-          <h2 className="text-2xl font-bold tracking-tight mb-4">ABOUT {sellerId.toUpperCase()}</h2>
-          <p className="text-gray-700 font-light leading-relaxed max-w-2xl">
-            {userData.bio || `Trusted premium vehicle seller specializing in high-quality sports cars and motorcycles. All vehicles undergo thorough inspection and come with complete documentation. Fast transactions, transparent pricing.`}
-          </p>
+          <div className="p-6 bg-gray-50 rounded-xl shadow-sm text-center">
+            <div className="text-3xl font-bold">{reviews}</div>
+            <div className="text-xs text-gray-500 mt-1 tracking-widest">TOTAL REVIEWS</div>
+          </div>
+
+          <div className="p-6 bg-gray-50 rounded-xl shadow-sm text-center">
+            <div className="text-3xl font-bold">{rating}.0</div>
+            <div className="text-xs text-gray-500 mt-1 tracking-widest">RATING</div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Listings */}
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <h2 className="text-2xl font-bold tracking-tight mb-8">ACTIVE LISTINGS</h2>
-        
+      <main className="max-w-6xl mx-auto px-4 flex-1 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Active Listings</h2>
+          <button
+            onClick={() => navigate('/create-post')}
+            className="px-4 py-2 bg-black text-white rounded-md font-semibold hover:bg-gray-800 transition"
+          >
+            Post Your Vehicle
+          </button>
+        </div>
+
         {sellerVehicles.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 font-light mb-4">No active listings at the moment</p>
-            <button
-              onClick={() => navigate('/')}
-              className="px-6 py-2 border border-black text-black font-bold tracking-wide hover:bg-black hover:text-white transition"
-            >
-              VIEW OTHER SELLERS
-            </button>
+          <div className="text-center py-20">
+            <p className="text-gray-600 mb-6">No active listings at the moment.</p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => navigate('/create-post')}
+                className="px-6 py-2 bg-black text-white font-bold tracking-wide hover:bg-gray-800 transition"
+              >
+                POST YOUR VEHICLE
+              </button>
+              <button
+                onClick={() => navigate('/vehicles')}
+                className="px-6 py-2 border border-black text-black font-bold tracking-wide hover:bg-black hover:text-white transition"
+              >
+                VIEW OTHER LISTINGS
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {sellerVehicles.map((vehicle: any) => (
-              <div key={vehicle.id} className="border border-gray-200">
-                <img
-                  src={vehicle.images[0]}
-                  alt={vehicle.name}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-bold">{vehicle.year} {vehicle.brand} {vehicle.name}</h3>
-                  <p className="text-lg font-bold text-gray-900">PKR {vehicle.price.toLocaleString()}</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sellerVehicles.map((post) => (
+              <VehicleCard post={post} key={post._id} />
             ))}
+          </div>
+        )}
+      </main>
+
+      {/* Chat Drawer */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {!isChatOpen ? (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="bg-black text-white px-4 py-3 rounded-full shadow-lg hover:bg-gray-800 transition"
+          >
+            Chat
+          </button>
+        ) : (
+          <div className="w-80 md:w-96 bg-white rounded-xl shadow-xl overflow-hidden">
+            <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
+              <div>
+                <div className="font-bold">{displayName}</div>
+                <div className="text-xs text-gray-200">Typically replies within 24 hours</div>
+              </div>
+              <button onClick={() => setIsChatOpen(false)} className="text-white text-lg">×</button>
+            </div>
+
+            <div className="h-64 overflow-y-auto p-4 bg-gray-50 space-y-3">
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-500">Start a conversation with the seller</div>
+              ) : (
+                messages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[70%] px-3 py-2 rounded-lg ${msg.sender === 'user' ? 'bg-black text-white' : 'bg-gray-200 text-gray-900'}`}>
+                      <div className="text-sm">{msg.text}</div>
+                      <div className="text-xs mt-1 opacity-70">{msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="p-3 border-t border-gray-100 flex gap-2">
+              <input
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Write a message..."
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:outline-none"
+              />
+              <button onClick={handleSendMessage} className="px-3 py-2 bg-black text-white rounded-md">Send</button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Chat Interface */}
-      <div className="bg-gray-100 mt-12 py-12">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white border border-gray-200">
-            {/* Chat Header */}
-            <div
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className="bg-black text-white p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800 transition"
-            >
-              <h2 className="text-lg font-bold tracking-tight">
-                CHAT WITH {sellerId.toUpperCase()}
-              </h2>
-              <span className="text-2xl">{isChatOpen ? '−' : '+'}</span>
-            </div>
-
-            {/* Chat Body */}
-            {isChatOpen && (
-              <div className="flex flex-col h-96">
-                {/* Messages Container */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-                  {messages.length === 0 ? (
-                    <div className="text-center text-gray-500 font-light">
-                      <p>Start a conversation with the seller</p>
-                    </div>
-                  ) : (
-                    messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs px-4 py-2 rounded-lg ${
-                            msg.sender === 'user'
-                              ? 'bg-black text-white'
-                              : 'bg-gray-300 text-gray-900'
-                          }`}
-                        >
-                          <p className="text-sm">{msg.text}</p>
-                          <p className="text-xs mt-1 opacity-70">
-                            {msg.timestamp.toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input Area */}
-                <div className="border-t border-gray-200 p-4 flex gap-2">
-                  <input
-                    type="text"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Type your message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 focus:outline-none focus:border-black"
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    className="bg-black text-white px-6 py-2 font-bold tracking-wide hover:bg-gray-800 transition"
-                  >
-                    SEND
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-black text-white py-12 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm font-light text-gray-500 tracking-widest">
-          © 2024 SPORTS ELITE. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

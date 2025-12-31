@@ -4,7 +4,12 @@ import { asyncHandler } from '../middleware/errorHandler';
 import User from '../models/User';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { username, email, password, fullName } = req.body;
+  let { username, email, password, fullName } = req.body;
+
+  // Normalize inputs
+  username = (username || '').toString().trim();
+  email = (email || '').toString().trim().toLowerCase();
+  fullName = (fullName || '').toString().trim();
 
   // Validation
   if (!username || !email || !password || !fullName) {
@@ -14,7 +19,14 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Check if user already exists
+  if (typeof password !== 'string' || password.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    });
+  }
+
+  // Check if user already exists (use normalized email and username)
   const existingUser = await User.findOne({ $or: [{ email }, { username }] });
   if (existingUser) {
     return res.status(409).json({
@@ -90,6 +102,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       username: user.username,
       email: user.email,
       fullName: user.fullName,
+      phone: user.phone,
       bio: user.bio,
       profileImage: user.profileImage,
     },
