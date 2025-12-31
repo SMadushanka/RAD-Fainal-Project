@@ -22,7 +22,10 @@ export const errorHandler = (
   });
 };
 
-export const asyncHandler = (fn: Function) => {
+// Replace the generic Function signature with a properly typed async handler wrapper
+export const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
