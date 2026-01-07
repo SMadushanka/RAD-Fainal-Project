@@ -83,7 +83,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   // Compare password
   const isPasswordValid = await user.comparePassword(password);
-  if (!isPasswordValid) {
+  if (!isPasswordValid) { 
     return res.status(401).json({
       success: false,
       message: 'Invalid email or password',

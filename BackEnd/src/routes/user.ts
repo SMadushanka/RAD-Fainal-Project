@@ -1,11 +1,13 @@
 import express from 'express';
 import {
-  getAllUsers,
-  getUserById,
-  getUserProfile,
-  updateUserProfile,
+    getAllUsers,
+    getUserById,
+    getUserProfile,
+    updateUserProfile,
+    uploadProfilePhoto,
 } from '../controllers/userController';
 import { authMiddleware } from '../middleware/auth';
+import { upload } from '../middleware/uploadMiddleware';
 
 const router = express.Router();
 
@@ -14,6 +16,9 @@ router.get('/profile', authMiddleware, getUserProfile);
 
 // Update user profile
 router.put('/profile', authMiddleware, updateUserProfile);
+
+// Upload profile photo
+router.post('/upload-photo', authMiddleware, upload.single('photo'), uploadProfilePhoto);
 
 // Get all users (sellers)
 router.get('/all', getAllUsers);

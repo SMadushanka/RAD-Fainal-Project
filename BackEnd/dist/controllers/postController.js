@@ -30,7 +30,7 @@ exports.createPost = (0, errorHandler_1.asyncHandler)(async (req, res) => {
         author: req.userId,
     });
     await newPost.save();
-    await newPost.populate('author', 'username fullName profileImage');
+    await newPost.populate('author', 'username fullName profileImage phone');
     res.status(201).json({
         success: true,
         message: 'Post created successfully',
@@ -39,7 +39,7 @@ exports.createPost = (0, errorHandler_1.asyncHandler)(async (req, res) => {
 });
 exports.getAllPosts = (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const posts = await Post_1.default.find()
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage')
         .sort({ createdAt: -1 });
     res.json({
@@ -50,7 +50,7 @@ exports.getAllPosts = (0, errorHandler_1.asyncHandler)(async (req, res) => {
 });
 exports.getUserPosts = (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const posts = await Post_1.default.find({ author: req.params.userId })
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage')
         .sort({ createdAt: -1 });
     res.json({
@@ -61,7 +61,7 @@ exports.getUserPosts = (0, errorHandler_1.asyncHandler)(async (req, res) => {
 });
 exports.getPostById = (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const post = await Post_1.default.findById(req.params.postId)
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage');
     if (!post) {
         return res.status(404).json({
@@ -94,7 +94,7 @@ exports.updatePost = (0, errorHandler_1.asyncHandler)(async (req, res) => {
         });
     }
     const updatedPost = await Post_1.default.findByIdAndUpdate(req.params.postId, { title, description, image, price, category, condition, location }, { new: true, runValidators: true })
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage');
     res.json({
         success: true,
@@ -139,7 +139,7 @@ exports.likePost = (0, errorHandler_1.asyncHandler)(async (req, res) => {
         post.likes.push(userId);
     }
     await post.save();
-    await post.populate('author', 'username fullName profileImage');
+    await post.populate('author', 'username fullName profileImage phone');
     await post.populate('comments.user', 'username fullName profileImage');
     res.json({
         success: true,
@@ -168,7 +168,7 @@ exports.addComment = (0, errorHandler_1.asyncHandler)(async (req, res) => {
         createdAt: new Date(),
     });
     await post.save();
-    await post.populate('author', 'username fullName profileImage');
+    await post.populate('author', 'username fullName profileImage phone');
     await post.populate('comments.user', 'username fullName profileImage');
     res.json({
         success: true,

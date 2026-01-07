@@ -42,9 +42,17 @@ export default function Navbar() {
                             </button>
                             <button
                                 onClick={() => navigate(`/profile/${currentUser}`)}
-                                className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold"
+                                className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold hover:bg-gray-500 transition"
+                                title="View profile"
                             >
                                 {currentUser.charAt(0).toUpperCase()}
+                            </button>
+                            <button
+                                onClick={() => navigate('/profile-settings')}
+                                className="text-sm font-light tracking-wide hover:text-gray-300 transition"
+                                title="Profile settings"
+                            >
+                                SETTINGS
                             </button>
                             <button
                                 onClick={() => {

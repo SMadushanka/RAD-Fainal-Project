@@ -31,7 +31,7 @@ export const createPost = asyncHandler(async (req: AuthenticatedRequest, res: Re
     });
 
     await newPost.save();
-    await newPost.populate('author', 'username fullName profileImage');
+    await newPost.populate('author', 'username fullName profileImage phone');
 
     res.status(201).json({
         success: true,
@@ -42,7 +42,7 @@ export const createPost = asyncHandler(async (req: AuthenticatedRequest, res: Re
 
 export const getAllPosts = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const posts = await Post.find()
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage')
         .sort({ createdAt: -1 });
 
@@ -55,7 +55,7 @@ export const getAllPosts = asyncHandler(async (req: AuthenticatedRequest, res: R
 
 export const getUserPosts = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const posts = await Post.find({ author: req.params.userId })
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage')
         .sort({ createdAt: -1 });
 
@@ -68,7 +68,7 @@ export const getUserPosts = asyncHandler(async (req: AuthenticatedRequest, res: 
 
 export const getPostById = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const post = await Post.findById(req.params.postId)
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage');
 
     if (!post) {
@@ -113,7 +113,7 @@ export const updatePost = asyncHandler(async (req: AuthenticatedRequest, res: Re
         { title, description, image, price, category, condition, location },
         { new: true, runValidators: true }
     )
-        .populate('author', 'username fullName profileImage')
+        .populate('author', 'username fullName profileImage phone')
         .populate('comments.user', 'username fullName profileImage');
 
     res.json({
@@ -168,7 +168,7 @@ export const likePost = asyncHandler(async (req: AuthenticatedRequest, res: Resp
     }
 
     await post.save();
-    await post.populate('author', 'username fullName profileImage');
+    await post.populate('author', 'username fullName profileImage phone');
     await post.populate('comments.user', 'username fullName profileImage');
 
     res.json({
@@ -204,7 +204,7 @@ export const addComment = asyncHandler(async (req: AuthenticatedRequest, res: Re
     });
 
     await post.save();
-    await post.populate('author', 'username fullName profileImage');
+    await post.populate('author', 'username fullName profileImage phone');
     await post.populate('comments.user', 'username fullName profileImage');
 
     res.json({

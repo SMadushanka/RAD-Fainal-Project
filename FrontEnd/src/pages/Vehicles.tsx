@@ -39,13 +39,11 @@ export default function Vehicles() {
             if (!matchesSearch) return false;
         }
 
-        // Category filter (Assuming description or title contains category for now as backend doesn't have type field in schema)
-        // Ideally backend should have a 'type' field. For now, skipping strict category filter or simple regex match
+        // Category filter
         if (selectedCategory !== 'all') {
-            const categoryMatch =
-                vehicle.title.toLowerCase().includes(selectedCategory) ||
-                vehicle.description.toLowerCase().includes(selectedCategory);
-            if (!categoryMatch) return false;
+            if (!vehicle.category || vehicle.category.toLowerCase() !== selectedCategory.toLowerCase()) {
+                return false;
+            }
         }
 
         return true;

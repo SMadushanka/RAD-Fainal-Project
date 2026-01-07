@@ -11,7 +11,7 @@ export default function FilterBar({
     selectedCategory,
     setSelectedCategory,
 }: FilterBarProps) {
-    const categories = ['all', 'car', 'van', 'suv', 'sedan', 'truck', 'bike'];
+    const categories = ['all', 'car', 'suv', 'van', 'bike', 'truck', 'other'];
 
     return (
         <div className="mb-8">
@@ -33,8 +33,8 @@ export default function FilterBar({
                         key={category}
                         onClick={() => setSelectedCategory(category)}
                         className={`px-6 py-2 font-bold tracking-wide transition uppercase ${selectedCategory === category
-                                ? 'bg-black text-white'
-                                : 'border border-black text-black hover:bg-black hover:text-white'
+                            ? 'bg-black text-white'
+                            : 'border border-black text-black hover:bg-black hover:text-white'
                             }`}
                     >
                         {category}

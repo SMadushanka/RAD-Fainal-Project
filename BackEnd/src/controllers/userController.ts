@@ -20,7 +20,7 @@ export const getUserProfile = asyncHandler(async (req: AuthenticatedRequest, res
 });
 
 export const updateUserProfile = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { fullName, bio, profileImage } = req.body;
+    const { fullName, bio, profileImage, phone } = req.body;
 
     const user = await User.findByIdAndUpdate(
         req.userId,
@@ -28,6 +28,7 @@ export const updateUserProfile = asyncHandler(async (req: AuthenticatedRequest, 
             fullName,
             bio,
             profileImage,
+            phone,
         },
         { new: true, runValidators: true }
     );
@@ -42,6 +43,40 @@ export const updateUserProfile = asyncHandler(async (req: AuthenticatedRequest, 
     res.json({
         success: true,
         message: 'Profile updated successfully',
+        user,
+    });
+});
+
+export const uploadProfilePhoto = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: 'No file uploaded',
+        });
+    }
+
+    // Construct the file URL relative to server
+    const photoUrl = `/uploads/${req.file.filename}`;
+
+    // Update the user's profileImage in the database
+    const user = await User.findByIdAndUpdate(
+        req.userId,
+        { profileImage: photoUrl },
+        { new: true, runValidators: true }
+    );
+
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: 'User not found',
+        });
+    }
+
+    res.json({
+        success: true,
+        message: 'Photo uploaded successfully',
+        photoUrl,
+        filename: req.file.filename,
         user,
     });
 });

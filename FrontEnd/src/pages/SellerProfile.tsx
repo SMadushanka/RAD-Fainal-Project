@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import Navbar from '../components/Navbar'
 import VehicleCard from '../components/VehicleCard'
-import { postService } from '../services/postService'
 import type { Post } from '../services/postService'
+import { postService } from '../services/postService'
+import { userService, type User } from '../services/userService'
 
 interface Message {
   id: string
@@ -17,12 +18,9 @@ export default function SellerProfile() {
   const { sellerId } = useParams<{ sellerId: string }>()
   const navigate = useNavigate()
 
-  // currentUser not required in this view; remove unused state to keep types clean
-  const sellerStorage = sellerId ? localStorage.getItem(`user_${sellerId}`) : null
-  const parsedSeller = sellerStorage ? JSON.parse(sellerStorage) : null
-
-  const [sellerData, setSellerData] = useState<any>(parsedSeller || null)
+  const [sellerData, setSellerData] = useState<User | null>(null)
   const [sellerVehicles, setSellerVehicles] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
 
   const [messages, setMessages] = useState<Message[]>([])
   const [messageInput, setMessageInput] = useState<string>('')
@@ -35,24 +33,27 @@ export default function SellerProfile() {
   }, [messages])
 
   useEffect(() => {
-    // Try to load seller data from localStorage; if not present, derive from posts
     const load = async () => {
+      if (!sellerId) return
+
+      setLoading(true)
       try {
+        // Fetch seller data directly from API
+        const seller = await userService.getUserById(sellerId)
+        setSellerData(seller)
+
+        // Fetch seller's posts
         const posts = await postService.getAllPosts()
         const filtered = posts.filter((p) => p.author && p.author._id === sellerId)
         setSellerVehicles(filtered)
-
-        if (!sellerData && filtered.length > 0) {
-          setSellerData(filtered[0].author)
-        }
       } catch (err) {
-        // fallback: no network – keep local data if available
-        console.warn('Could not load posts for seller:', err)
+        console.warn('Could not load seller data:', err)
+      } finally {
+        setLoading(false)
       }
     }
 
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sellerId])
 
   const handleSendMessage = () => {
@@ -95,12 +96,23 @@ export default function SellerProfile() {
     )
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading seller profile...</p>
+        </div>
+      </div>
+    )
+  }
+
   // Derived display values with safe fallbacks
   const displayName = sellerData?.fullName || sellerId
-  const profileImage = sellerData?.profileImage || `https://i.pravatar.cc/160?u=${sellerId}`
-  const rating = sellerData?.rating ?? 5
-  const reviews = sellerData?.reviews ?? sellerVehicles.length
-  const joinedYear = sellerData?.joinedDate ? new Date(sellerData.joinedDate).getFullYear() : '2024'
+  const profileImage = sellerData?.profileImage || null
+  const rating = 5 // Fixed value since ratings system is not implemented yet
+  const reviews = sellerVehicles.length // Use vehicle count as a proxy
+  const joinedYear = sellerData?.createdAt ? new Date(sellerData.createdAt).getFullYear() : new Date().getFullYear()
 
   return (
     <div className="bg-white min-h-screen flex flex-col">
@@ -110,7 +122,13 @@ export default function SellerProfile() {
       <header className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-12">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-shrink-0">
-            <img src={profileImage} alt={displayName} className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg" />
+            {profileImage ? (
+              <img src={profileImage} alt={displayName} className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg" />
+            ) : (
+              <div className="w-36 h-36 rounded-full bg-gray-700 flex items-center justify-center text-white text-5xl font-bold border-4 border-white shadow-lg">
+                {displayName?.charAt(0)?.toUpperCase() || '?'}
+              </div>
+            )}
           </div>
 
           <div className="flex-1">

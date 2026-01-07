@@ -187,11 +187,17 @@ export default function Sellers() {
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition duration-300 cursor-pointer"
                   >
                     <div className="bg-gray-100 p-6 text-center border-b border-gray-200">
-                      <img
-                        src={seller.profileImage || 'https://i.pravatar.cc/150'}
-                        alt={seller.username}
-                        className="w-16 h-16 rounded-full mx-auto mb-4 object-cover"
-                      />
+                      {seller.profileImage ? (
+                        <img
+                          src={seller.profileImage}
+                          alt={seller.username}
+                          className="w-16 h-16 rounded-full mx-auto mb-4 object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full mx-auto mb-4 bg-gray-800 flex items-center justify-center text-white text-xl font-bold">
+                          {seller.fullName?.charAt(0)?.toUpperCase() || seller.username?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                      )}
                       <h3 className="text-xl font-bold tracking-tight mb-1">{seller.fullName}</h3>
                       <p className="text-xs text-gray-600 font-light">@{seller.username} • Joined {seller.joinedDate}</p>
                     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import Navbar from '../components/Navbar'
 import { postService, type Post } from '../services/postService'
 
 export default function MyPosts() {
@@ -113,31 +113,28 @@ export default function MyPosts() {
               <div className="flex gap-4 flex-wrap">
                 <button
                   onClick={() => setFilter('all')}
-                  className={`px-6 py-2 font-bold tracking-wide transition ${
-                    filter === 'all'
-                      ? 'bg-black text-white'
-                      : 'border border-black text-black hover:bg-black hover:text-white'
-                  }`}
+                  className={`px-6 py-2 font-bold tracking-wide transition ${filter === 'all'
+                    ? 'bg-black text-white'
+                    : 'border border-black text-black hover:bg-black hover:text-white'
+                    }`}
                 >
                   ALL ({myPosts.length})
                 </button>
                 <button
                   onClick={() => setFilter('Car')}
-                  className={`px-6 py-2 font-bold tracking-wide transition ${
-                    filter === 'Car'
-                      ? 'bg-black text-white'
-                      : 'border border-black text-black hover:bg-black hover:text-white'
-                  }`}
+                  className={`px-6 py-2 font-bold tracking-wide transition ${filter === 'Car'
+                    ? 'bg-black text-white'
+                    : 'border border-black text-black hover:bg-black hover:text-white'
+                    }`}
                 >
                   CARS ({myPosts.filter(p => p.category === 'Car').length})
                 </button>
                 <button
                   onClick={() => setFilter('Bike')}
-                  className={`px-6 py-2 font-bold tracking-wide transition ${
-                    filter === 'Bike'
-                      ? 'bg-black text-white'
-                      : 'border border-black text-black hover:bg-black hover:text-white'
-                  }`}
+                  className={`px-6 py-2 font-bold tracking-wide transition ${filter === 'Bike'
+                    ? 'bg-black text-white'
+                    : 'border border-black text-black hover:bg-black hover:text-white'
+                    }`}
                 >
                   BIKES ({myPosts.filter(p => p.category === 'Bike').length})
                 </button>
@@ -220,6 +217,12 @@ export default function MyPosts() {
                           VIEW DETAILS
                         </button>
                         <button
+                          onClick={() => navigate(`/edit-post/${post._id}`)}
+                          className="flex-1 px-4 py-2 bg-black text-white text-sm font-bold tracking-wide hover:bg-gray-800 transition"
+                        >
+                          EDIT
+                        </button>
+                        <button
                           onClick={() => handleDelete(post._id)}
                           className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-bold tracking-wide hover:bg-red-700 transition"
                         >
@@ -237,16 +240,16 @@ export default function MyPosts() {
 
       {/* Post Detail Modal */}
       {selectedPost && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-3xl my-8">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-3xl my-8 rounded-lg overflow-auto max-h-[90vh]">
             <button
               onClick={() => setSelectedPost(null)}
-              className="sticky top-0 right-0 z-10 float-right text-3xl font-light p-4 hover:bg-gray-100"
+              className="sticky top-0 right-0 z-10 float-right text-3xl font-light p-3 sm:p-4 hover:bg-gray-100"
             >
               ✕
             </button>
 
-            <div className="p-8 clear-both">
+            <div className="p-3 sm:p-6 md:p-8 clear-both">
               {/* Image */}
               <div className="mb-8">
                 <img
@@ -322,6 +325,12 @@ export default function MyPosts() {
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-8">
+                <button
+                  onClick={() => navigate(`/edit-post/${selectedPost._id}`)}
+                  className="flex-1 bg-black text-white py-3 font-bold tracking-wide hover:bg-gray-800 transition"
+                >
+                  EDIT POSTING
+                </button>
                 <button
                   onClick={() => handleDelete(selectedPost._id)}
                   className="flex-1 bg-red-600 text-white py-3 font-bold tracking-wide hover:bg-red-700 transition"

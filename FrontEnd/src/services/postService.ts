@@ -1,5 +1,7 @@
 import { api } from './api';
 
+const BASE_URL = 'http://localhost:5000';
+
 export interface Post {
     _id: string;
     title: string;
@@ -30,25 +32,58 @@ export interface Post {
     createdAt: string;
 }
 
+// Helper function to normalize image URLs
+const normalizeImageUrl = (url: string | undefined): string => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    return `${BASE_URL}${url}`;
+};
+
+// Normalize all image URLs in a post
+const normalizePost = (post: Post): Post => {
+    return {
+        ...post,
+        image: normalizeImageUrl(post.image),
+        author: post.author ? {
+            ...post.author,
+            profileImage: normalizeImageUrl(post.author.profileImage)
+        } : post.author,
+        comments: post.comments?.map(comment => ({
+            ...comment,
+            user: comment.user ? {
+                ...comment.user,
+                profileImage: normalizeImageUrl(comment.user.profileImage)
+            } : comment.user
+        })) || []
+    };
+};
+
 export const postService = {
     getAllPosts: async () => {
         const response = await api.get('/post');
-        return response.posts as Post[];
+        const posts = response.posts as Post[];
+        return posts.map(normalizePost);
     },
 
     getPostById: async (id: string) => {
         const response = await api.get(`/post/${id}`);
-        return response.post as Post;
+        return normalizePost(response.post as Post);
     },
 
     getUserPosts: async (userId: string) => {
         const response = await api.get(`/post/user/${userId}`);
-        return response.posts as Post[];
+        const posts = response.posts as Post[];
+        return posts.map(normalizePost);
     },
 
     createPost: async (data: FormData) => {
         const response = await api.post('/post', data);
-        return response.post as Post;
+        return normalizePost(response.post as Post);
+    },
+
+    updatePost: async (postId: string, data: FormData) => {
+        const response = await api.put(`/post/${postId}`, data);
+        return normalizePost(response.post as Post);
     },
 
     deletePost: async (postId: string) => {
@@ -56,3 +91,4 @@ export const postService = {
         return response;
     },
 };
+
