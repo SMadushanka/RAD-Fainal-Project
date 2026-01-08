@@ -7,7 +7,6 @@ export default function Register() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
     image: ''
@@ -46,12 +45,8 @@ export default function Register() {
       return
     }
 
-    // Create a username from email if not provided
-    const username = formData.email.split('@')[0]
-
     // Call backend register endpoint
     api.post('/auth/register', {
-      username,
       email: formData.email,
       password: formData.password,
       fullName: formData.fullName,
@@ -141,20 +136,6 @@ export default function Register() {
                 placeholder="name@example.com"
                 className="w-full px-4 py-3 bg-gray-900 border border-gray-800 text-white placeholder-gray-600 focus:outline-none focus:border-white transition font-light"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold tracking-widest text-white mb-2">
-                PHONE NUMBER (Optional)
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+1234567890"
-                className="w-full px-4 py-3 bg-gray-900 border border-gray-800 text-white placeholder-gray-600 focus:outline-none focus:border-white transition font-light"
-              />
-              <p className="text-xs text-gray-500 font-light mt-1">Include country code for WhatsApp (e.g., +1 for US)</p>
             </div>
 
             <div>

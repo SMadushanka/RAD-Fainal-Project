@@ -4,15 +4,14 @@ import { asyncHandler } from '../middleware/errorHandler';
 import User from '../models/User';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  let { username, email, password, fullName } = req.body;
+  let { email, password, fullName } = req.body;
 
   // Normalize inputs
-  username = (username || '').toString().trim();
   email = (email || '').toString().trim().toLowerCase();
   fullName = (fullName || '').toString().trim();
 
   // Validation
-  if (!username || !email || !password || !fullName) {
+  if (!email || !password || !fullName) {
     return res.status(400).json({
       success: false,
       message: 'All fields are required',
@@ -26,18 +25,17 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // Check if user already exists (use normalized email and username)
-  const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+  // Check if user already exists
+  const existingUser = await User.findOne({ email });
   if (existingUser) {
     return res.status(409).json({
       success: false,
-      message: 'Email or username already exists',
+      message: 'Email already exists',
     });
   }
 
   // Create new user
   const newUser = new User({
-    username,
     email,
     password,
     fullName,
@@ -54,7 +52,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     token,
     user: {
       id: newUser._id,
-      username: newUser.username,
       email: newUser.email,
       fullName: newUser.fullName,
     },
@@ -99,7 +96,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     token,
     user: {
       id: user._id,
-      username: user.username,
       email: user.email,
       fullName: user.fullName,
       phone: user.phone,
